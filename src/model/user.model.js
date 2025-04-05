@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { type } from "os";
+import { create } from "domain";
 
 const User = new Schema({
   name: {
@@ -16,16 +16,26 @@ const User = new Schema({
     type: String,
     required: true,
   },
-  profileImage: {
+  pic: {
     type: String,
   },
   isGoogleAuth: {
     type: Boolean,
     default: false,
   },
-  url: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "URL",
+  url: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "URL",
+    },
+  ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 

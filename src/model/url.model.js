@@ -11,11 +11,26 @@ const URL = new Schema(
       type: String,
       required: true,
     },
-    visitedHistory: [{ timestamp: Number }],
-    analytics: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Analytics",
+    isActive: {
+      type: Boolean,
+      default: true,
     },
+    isExpiry: {
+      type: Boolean,
+      default: false,
+    },
+    expiryDate: {
+      type: String,
+    },
+    expiryTime: {
+      type: String,
+    },
+    analytics: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Analytics",
+      },
+    ],
   },
   {
     timestamps: true,

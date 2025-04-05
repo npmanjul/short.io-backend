@@ -1,50 +1,78 @@
 import mongoose, { Schema } from "mongoose";
 
-const DeviceInfo = new Schema({
+const DeviceInfoSchema = new Schema({
   ipAddress: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   deviceType: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   connectionType: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   downloadSpeed: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   deviceCores: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   deviceRAM: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   browser: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   platform: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   language: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   onlineStatus: {
     type: String,
-    required: true,
+    default: "unavailable",
   },
   vendor: {
     type: String,
-    required: true,
+    default: "unavailable",
+  },
+  isp: {
+    type: String,
+    default: "unavailable",
+  },
+  org: {
+    type: String,
+    default: "unavailable",
+  },
+  as: {
+    type: String,
+    default: "unavailable",
+  },
+  asname: {
+    type: String,
+    default: "unavailable",
+  },
+  reverse: {
+    type: String,
+    default: "unavailable",
+  },
+  proxy: {
+    type: String,
+    default: "unavailable",
+  },
+  hosting: {
+    type: String,
+    default: "unavailable",
   },
 });
 
-export default mongoose.model("DeviceInfo", DeviceInfo);
+export default mongoose.model("DeviceInfo", DeviceInfoSchema);
