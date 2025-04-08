@@ -8,6 +8,7 @@ import {
   getAnalyticsProfile,
   getAnalyticsRecentActivity,
   getAnalyticsURL,
+  getIpAddress,
   pushAnalytics,
   visitAnalytics,
 } from "../controller/analytics.controller.js";
@@ -31,5 +32,8 @@ router
   .route("/analyticsrecentactivity/:userId")
   .get(getAnalyticsRecentActivity);
 router.route("/analyticsurl/:userId").get(getAnalyticsURL);
+
+// Proxy server for ip address
+router.route("/ip").get(getIpAddress);
 
 export default router;

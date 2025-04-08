@@ -7,6 +7,7 @@ import DeviceTime from "../model/Analytics Modules/DeviceTime.model.js";
 import Analytic from "../model/Analytics.model.js";
 import Url from "../model/url.model.js";
 import User from "../model/user.model.js";
+import axios from "axios";
 
 const getAnalytics = asyncHandler(async (req, res) => {
   try {
@@ -588,8 +589,22 @@ const getAnalyticsURL = asyncHandler(async (req, res) => {
 
     res.status(200).json(formattedResponse);
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+//proxy server for ip address
+const getIpAddress = asyncHandler(async (req, res) => {
+  try {
+    const ip = req.query.ip;
+    const response = await axios.get(
+      `http://ip-api.com/json/${ip}?fields=status,message,country,region,city,zip,currency,isp,org,as,asname,reverse,proxy,hosting,lat,lon`
+    );
+    res.json(response.data);
+  } catch (error) {
+    // console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 });
 
@@ -605,4 +620,5 @@ export {
   getAnalyticsDeviceLocation,
   getAnalyticsRecentActivity,
   getAnalyticsURL,
+  getIpAddress,
 };
