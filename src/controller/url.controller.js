@@ -1,19 +1,24 @@
 import { nanoid } from "nanoid";
 import URL from "../model/url.model.js";
 import User from "../model/user.model.js";
-import asyncHandler from "express-async-handler";
+import expressAsyncHandler from "express-async-handler";
 
-const urlshortner = asyncHandler(async (req, res) => {
+//@description     short the url
+//@route           POST /url/generate
+//@access
+//@response        url,userId
+
+const urlshortner = expressAsyncHandler(async (req, res) => {
   try {
     const { url, userId } = req.body;
     if (!url) {
       return res.status(400).json({ message: "URL is required" });
     }
 
-    let shortId = nanoid(10);
+    let shortId = nanoid(6);
     const shortIdExists = await URL.findOne({ shortId });
     if (shortIdExists) {
-      shortId = nanoid(10);
+      shortId = nanoid(6);
     }
     const urlCreated = await URL.create({
       redirectURL: url,
@@ -45,7 +50,11 @@ const urlshortner = asyncHandler(async (req, res) => {
   }
 });
 
-const redirectURL = asyncHandler(async (req, res) => {
+//@description     redirect url
+//@route           GET /url/:id
+//@access
+//@response        redirectURL,isActive
+const redirectURL = expressAsyncHandler(async (req, res) => {
   try {
     const shortId = req.params.id;
     const entry = await URL.findOne({
@@ -66,31 +75,4 @@ const redirectURL = asyncHandler(async (req, res) => {
   }
 });
 
-const urlExpiry = asyncHandler(async (req, res) => {
-  let { isActive, expiryDate, expiryTime, urlId } = req.body;
-
-  const url = await URL.findOne({ _id: urlId });
-
-  if (!url) {
-    return res.status(404).json({ message: "URL not found" });
-  }
-
-  if (expiryDate && expiryTime) {
-    url.expiryDate = expiryDate;
-    url.expiryTime = expiryTime;
-    url.isExpiry = true;
-  }
-
-  if (!expiryDate && !expiryTime) {
-    url.isExpiry = false;
-  }
-
-  url.isActive = isActive;
-  await url.save();
-
-  res.status(201).json({
-    message: "URL updated successfully",
-  });
-});
-
-export { urlshortner, redirectURL, urlExpiry };
+export { urlshortner, redirectURL };

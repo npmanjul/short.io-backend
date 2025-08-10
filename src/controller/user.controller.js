@@ -4,6 +4,7 @@ import User from "../model/user.model.js";
 //@description     Register new user
 //@route           POST /user/signup
 //@access          Public
+//@response        _id, name, email, token
 
 const signup = asyncHandler(async (req, res) => {
   const { name, email, password, profileImage } = req.body;
@@ -48,6 +49,7 @@ const signup = asyncHandler(async (req, res) => {
 //@description     Auth the user
 //@route           POST /user/login
 //@access          Public
+//@response        _id, name, email, token
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -91,6 +93,7 @@ const login = asyncHandler(async (req, res) => {
 //@description     Google Auth the user
 //@route           POST /user/googleauth
 //@access          Public
+//@response        _id, name, email, token,pic
 
 const googleAuth = asyncHandler(async (req, res) => {
   const { email, name, pic, uid } = req.body;

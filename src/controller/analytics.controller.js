@@ -1,4 +1,3 @@
-import asyncHandler from "express-async-handler";
 import DeviceLocation from "../model/Analytics Modules/DeviceLocation.model.js";
 import DeviceInfo from "../model/Analytics Modules/DeviceInfo.model.js";
 import DeviceBattery from "../model/Analytics Modules/DeviceBattery.model.js";
@@ -8,8 +7,9 @@ import Analytic from "../model/Analytics.model.js";
 import Url from "../model/url.model.js";
 import User from "../model/user.model.js";
 import axios from "axios";
+import expressAsyncHandler from "express-async-handler";
 
-const getAnalytics = asyncHandler(async (req, res) => {
+const getAnalytics = expressAsyncHandler(async (req, res) => {
   try {
     const { userId } = req.body;
     const getUser = await User.findOne({ _id: userId });
@@ -22,7 +22,7 @@ const getAnalytics = asyncHandler(async (req, res) => {
   }
 });
 
-const pushAnalytics = asyncHandler(async (req, res) => {
+const pushAnalytics = expressAsyncHandler(async (req, res) => {
   try {
     const {
       urlid,
@@ -153,7 +153,7 @@ const pushAnalytics = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsOverview = asyncHandler(async (req, res) => {
+const getAnalyticsOverview = expressAsyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
     const getUser = await User.findOne({ _id: userId });
@@ -194,7 +194,7 @@ const getAnalyticsOverview = asyncHandler(async (req, res) => {
   }
 });
 
-const visitAnalytics = asyncHandler(async (req, res) => {
+const visitAnalytics = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -241,7 +241,7 @@ const visitAnalytics = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsDeviceInfo = asyncHandler(async (req, res) => {
+const getAnalyticsDeviceInfo = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -316,7 +316,7 @@ const getAnalyticsDeviceInfo = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsDeviceNetwork = asyncHandler(async (req, res) => {
+const getAnalyticsDeviceNetwork = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -376,7 +376,7 @@ const getAnalyticsDeviceNetwork = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsDeviceLocation = asyncHandler(async (req, res) => {
+const getAnalyticsDeviceLocation = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -435,7 +435,7 @@ const getAnalyticsDeviceLocation = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsDeviceBattery = asyncHandler(async (req, res) => {
+const getAnalyticsDeviceBattery = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -518,7 +518,7 @@ const getAnalyticsDeviceBattery = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsProfile = asyncHandler(async (req, res) => {
+const getAnalyticsProfile = expressAsyncHandler(async (req, res) => {
   try {
     const userId = req.params.userId;
     const getUser = await User.findOne(
@@ -533,7 +533,7 @@ const getAnalyticsProfile = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsRecentActivity = asyncHandler(async (req, res) => {
+const getAnalyticsRecentActivity = expressAsyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
     const getUser = await User.findOne({ _id: userId }, { password: 0 });
@@ -565,20 +565,40 @@ const getAnalyticsRecentActivity = asyncHandler(async (req, res) => {
   }
 });
 
-const getAnalyticsURL = asyncHandler(async (req, res) => {
+const getAnalyticsURL = expressAsyncHandler(async (req, res) => {
   try {
     const { userId } = req.params;
-    const getUser = await User.findOne({ _id: userId }, { password: 0 });
+    const { urlname, page = 1, limit = 10 } = req.query; // default page=1, limit=10
 
+    const getUser = await User.findOne({ _id: userId }, { password: 0 });
     if (!getUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const getUrl = await Url.find({ _id: { $in: getUser.url } }).sort({
-      createdAt: -1,
-    }); // Sort in ascending order
+    // Convert to integers and cap limits
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, parseInt(limit)); // cap at 100 per page
+    const skip = (pageNum - 1) * limitNum;
 
-    const formattedResponse = getUrl.map((url) => ({
+    // Build search query
+    const query = {
+      _id: { $in: getUser.url },
+    };
+    if (urlname) {
+      query.redirectURL = { $regex: urlname, $options: "i" }; // case-insensitive
+    }
+
+    // Get total count for pagination
+    const total = await Url.countDocuments(query);
+
+    // Fetch paginated results
+    const urls = await Url.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    // Format response
+    const formattedResponse = urls.map((url) => ({
       urlId: url._id,
       shortId: url.shortId,
       redirectURL: url.redirectURL,
@@ -587,15 +607,20 @@ const getAnalyticsURL = asyncHandler(async (req, res) => {
       isActive: url.isActive,
     }));
 
-    res.status(200).json(formattedResponse);
+    res.status(200).json({
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+      data: formattedResponse,
+    });
   } catch (error) {
-    // console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 //proxy server for ip address
-const getIpAddress = asyncHandler(async (req, res) => {
+const getIpAddress = expressAsyncHandler(async (req, res) => {
   try {
     const ip = req.query.ip;
     const response = await axios.get(
@@ -606,6 +631,82 @@ const getIpAddress = asyncHandler(async (req, res) => {
     // console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
+});
+
+//@description     Get inactive urls
+//@route           GET /analytics/inactive
+//@access          Public
+//@response        urls
+
+const getInactiveUrls = expressAsyncHandler(async (req, res) => {
+  try {
+    const urls = await URL.find({ isActive: false });
+    res.status(200).json(urls);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+const deleteurl = expressAsyncHandler(async (req, res) => {
+  const { userid, urlid } = req.params;
+
+  const getUser = await User.findById(userid);
+  if (!getUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // Remove the urlId from user's urls array first
+  await User.findByIdAndUpdate(userid, {
+    $pull: { url: urlid },
+  });
+
+  // Find the URL document
+  const geturl = await Url.findById(urlid);
+  if (!geturl) {
+    return res.status(404).json({ message: "URL not found" });
+  }
+
+  const urlAllAnalytics = geturl.analytics; // array of analytics IDs
+
+  // Delete all related analytics documents and their referenced subdocuments
+  for (const analyticsid of urlAllAnalytics) {
+    const analyticsDoc = await Analytic.findById(analyticsid);
+    if (analyticsDoc) {
+      const subDocIds = [
+        analyticsDoc.deviceLocation,
+        analyticsDoc.deviceInfo,
+        analyticsDoc.deviceBattery,
+        analyticsDoc.deviceScreen,
+        analyticsDoc.deviceTime,
+      ];
+
+      await Promise.all(
+        subDocIds.map(async (id) => {
+          if (id) {
+            await Promise.all([
+              DeviceLocation.findByIdAndDelete(id).catch(() => {}),
+              DeviceInfo.findByIdAndDelete(id).catch(() => {}),
+              DeviceBattery.findByIdAndDelete(id).catch(() => {}),
+              DeviceScreen.findByIdAndDelete(id).catch(() => {}),
+              DeviceTime.findByIdAndDelete(id).catch(() => {}),
+            ]);
+          }
+        })
+      );
+
+      // Delete the analytics document itself
+      await Analytic.findByIdAndDelete(analyticsid);
+    }
+  }
+
+  // Finally, delete the URL document
+  await Url.findByIdAndDelete(urlid);
+
+  res.status(200).json({
+    message:
+      "URL removed from user, and URL with associated analytics deleted successfully",
+  });
 });
 
 export {
@@ -621,4 +722,6 @@ export {
   getAnalyticsRecentActivity,
   getAnalyticsURL,
   getIpAddress,
+  getInactiveUrls,
+  deleteurl,
 };

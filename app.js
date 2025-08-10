@@ -21,12 +21,14 @@ import urlshortnerRouter from "./src/router/url.router.js";
 import userAuth from "./src/router/user.router.js";
 import analyticsRouter from "./src/router/analytics.router.js";
 import urlanalyticsRouter from "./src/router/urlanalytics.router.js";
+import urlFeaturesRouter from "./src/router/features.router.js";
 
 // router implementation
 app.use(`${API_VERSION}/url`, urlshortnerRouter);
 app.use(`${API_VERSION}/user`, userAuth);
 app.use(`${API_VERSION}/analytics`, analyticsRouter);
 app.use(`${API_VERSION}/urlanalytics`, urlanalyticsRouter);
+app.use(`${API_VERSION}/urlfeatures`, urlFeaturesRouter);
 
 app.use(errorHandler);
 

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteurl,
   getAnalyticsDeviceBattery,
   getAnalyticsDeviceInfo,
   getAnalyticsDeviceLocation,
@@ -35,5 +36,6 @@ router.route("/analyticsurl/:userId").get(getAnalyticsURL);
 
 // Proxy server for ip address
 router.route("/ip").get(getIpAddress);
+router.route("/deleteurl/:userid/:urlid").delete(deleteurl);
 
 export default router;
