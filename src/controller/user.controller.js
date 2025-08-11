@@ -7,7 +7,7 @@ import User from "../model/user.model.js";
 //@response        _id, name, email, token
 
 const signup = asyncHandler(async (req, res) => {
-  const { name, email, password, profileImage } = req.body;
+  const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
     const error = new Error("Please Enter all the Fields");
@@ -23,11 +23,14 @@ const signup = asyncHandler(async (req, res) => {
     throw error;
   }
 
+  //generate random profile image
+  const defaultProfileImage = `https://ui-avatars.com/api/?name=${name}&background=random&size=256`;
+
   const user = await User.create({
     name,
     email,
     password,
-    profileImage,
+    pic: defaultProfileImage,
   });
 
   if (user) {
@@ -125,4 +128,14 @@ const googleAuth = asyncHandler(async (req, res) => {
   }
 });
 
-export { login, signup, googleAuth };
+const checkUser = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.body;
+    const isEmailExists = await User.findOne({ email });
+    res.status(200).json({ exists: !!isEmailExists });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+export { login, signup, googleAuth, checkUser };

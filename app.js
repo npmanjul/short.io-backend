@@ -5,13 +5,13 @@ import errorHandler from "./src/middleware/error.middleware.js";
 
 const app = express();
 
-const corsOptions = {
-  origin: "*",
-  allowedHeaders: "Content-Type, Authorization",
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://shrt-five.vercel.app"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(express.json()); // middleware converts that JSON into a JavaScript object
 app.use(express.urlencoded({ extended: true })); // convert into javascript object form form-urlencoded
