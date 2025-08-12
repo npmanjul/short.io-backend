@@ -14,7 +14,6 @@ const checkUrlExpiry = expressAsyncHandler(async (req, res) => {
 
   // Check if URL has expiry settings
   if (url.expiryDate && url.expiryTime) {
-    // Create expiry date in local timezone (IST)
     const [year, month, day] = url.expiryDate.split("-").map(Number);
     const [hour, minute] = url.expiryTime.split(":").map(Number);
     const expiryDateTimeIST = new Date(year, month - 1, day, hour, minute, 0);
@@ -25,7 +24,6 @@ const checkUrlExpiry = expressAsyncHandler(async (req, res) => {
         .json({ message: "Invalid expiry date or time format" });
     }
 
-    // Get current IST time
     const nowIST = new Date();
 
     if (nowIST > expiryDateTimeIST) {
@@ -64,20 +62,65 @@ const checkUrlExpiry = expressAsyncHandler(async (req, res) => {
 const setIsActive = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   const { isActive, isExpiry, expiryDate, expiryTime } = req.body;
-  const url = await URL.findOne({ shortId: id });
 
+  const url = await URL.findOne({ shortId: id });
   if (!url) {
     return res.status(404).json({ message: "URL not found" });
   }
 
-  url.isActive = isActive;
-  url.isExpiry = isExpiry;
-  url.expiryDate = expiryDate;
-  url.expiryTime = expiryTime;
+  // If expiry date and time are provided
+  if (expiryDate && expiryTime) {
+    // Parse expiry date and time in IST
+    const [year, month, day] = expiryDate.split("-").map(Number);
+    const [hour, minute] = expiryTime.split(":").map(Number);
+
+    // Construct expiry Date object in IST
+    const expiryDateTime = new Date(
+      Date.UTC(year, month - 1, day, hour - 5, minute - 30)
+    );
+
+    if (isNaN(expiryDateTime.getTime())) {
+      return res
+        .status(400)
+        .json({ message: "Invalid expiry date or time format" });
+    }
+
+    const now = new Date();
+
+    if (now > expiryDateTime) {
+      url.isActive = false;
+      url.isExpiry = true;
+    } else {
+      url.isActive = true;
+      url.isExpiry = false;
+    }
+
+    url.expiryDate = expiryDate;
+    url.expiryTime = expiryTime;
+  } else {
+    // No expiry set
+    url.expiryDate = null;
+    url.expiryTime = null;
+    url.isActive = true;
+    url.isExpiry = false;
+  }
+
+  // If manual override is given, apply it
+  if (typeof isActive === "boolean") {
+    url.isActive = isActive;
+  }
+  if (typeof isExpiry === "boolean") {
+    url.isExpiry = isExpiry;
+  }
+
   await url.save();
 
   res.status(200).json({
+    message: "URL status updated successfully",
     isActive: url.isActive,
+    isExpiry: url.isExpiry,
+    expiryDate: url.expiryDate,
+    expiryTime: url.expiryTime,
   });
 });
 
@@ -89,9 +132,9 @@ const setExpiry = expressAsyncHandler(async (req, res) => {
     return res.status(404).json({ message: "URL not found" });
   }
 
-  // Validate both date and time
   if (expiryDate && expiryTime) {
     const expiryDateTime = new Date(`${expiryDate}T${expiryTime}`);
+
     if (isNaN(expiryDateTime)) {
       return res
         .status(400)
@@ -101,29 +144,24 @@ const setExpiry = expressAsyncHandler(async (req, res) => {
     url.expiryDate = expiryDate;
     url.expiryTime = expiryTime;
 
-    // Create expiry date in local timezone (IST)
     const [year, month, day] = expiryDate.split("-").map(Number);
     const [hour, minute] = expiryTime.split(":").map(Number);
     const expiryDateTimeIST = new Date(year, month - 1, day, hour, minute, 0);
 
     const nowIST = new Date();
 
-    // Check if expiry date is in future or past
     if (nowIST > expiryDateTimeIST) {
-      // Date is in the past - URL has expired
       url.isActive = false;
       url.isExpiry = true;
     } else {
-      // Date is in the future - URL is active
       url.isActive = true;
       url.isExpiry = false;
     }
   } else {
-    // No expiry date/time provided - remove expiry
     url.expiryDate = null;
     url.expiryTime = null;
-    url.isActive = true; // URL should be active when no expiry is set
-    url.isExpiry = false; // Not expired when no expiry is set
+    url.isActive = true;
+    url.isExpiry = false;
   }
 
   await url.save();
